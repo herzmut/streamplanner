@@ -16,7 +16,7 @@ export default defineConfig({
     },
   },
     build: {
-      outDir: 'docs'
+      outDir: 'dist'
     },
   base: process.env.NODE_ENV === 'production' ? '/streamplanner/' : ''
 })
