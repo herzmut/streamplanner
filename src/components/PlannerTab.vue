@@ -19,7 +19,6 @@ const combinedStyle = computed(() => {
 });
 
 const downloadImage = (format) => {
-  const container = document.querySelector('.preview-container');
   const canvas = document.createElement('canvas');
   const img = document.querySelector('.template-preview-img');
   
@@ -83,7 +82,6 @@ const downloadImage = (format) => {
     const boxX = box.x * scaleX;
     const boxY = box.y * scaleY;
     const boxW = box.width * scaleX;
-    const boxH = box.height * scaleY;
 
     let startX = boxX;
     if (ctx.textAlign === 'center') startX = boxX + boxW / 2;
@@ -113,7 +111,7 @@ const downloadImage = (format) => {
         Keine Boxen definiert. Gehe zum Reiter "Konfiguration".
       </div>
       <div v-for="(box, index) in boxes" :key="index" class="text-input-group">
-        <label>Box {{ index + 1 }}</label>
+        <label>{{ box.label || `Box ${index + 1}` }}</label>
         <textarea 
           :value="localTexts[index]" 
           @input="updateText(index, $event.target.value)"
@@ -129,7 +127,7 @@ const downloadImage = (format) => {
 
     <div class="main-preview" :class="{ 'centered-content': templateImage }">
       <div v-if="templateImage" class="preview-container">
-        <img :src="templateImage" class="template-preview-img" />
+        <img :src="templateImage" class="template-preview-img" alt="Vorschau" />
         
         <div 
           v-for="(box, index) in boxes" 

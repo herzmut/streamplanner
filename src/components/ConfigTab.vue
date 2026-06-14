@@ -22,10 +22,27 @@ const fontWeightInput = ref(props.globalFontWeight || 400);
 
 const selectedFont = computed(() => googleFonts.find(f => f.name === fontInput.value) || googleFonts[0]);
 
-const previewStyle = computed(() => ({
-  fontFamily: `'${fontInput.value}'`,
-  fontWeight: fontWeightInput.value
-}));
+const previewStyle = computed(() => {
+  let style = {
+    fontFamily: `'${fontInput.value}'`,
+    fontWeight: fontWeightInput.value
+  };
+  
+  // Parse global CSS into the style object
+  if (props.globalCss) {
+    const rules = props.globalCss.split(';');
+    rules.forEach(rule => {
+      const [prop, value] = rule.split(':').map(s => s.trim());
+      if (prop && value) {
+        // Simple mapping for common CSS properties to JS style keys
+        const camelProp = prop.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+        style[camelProp] = value;
+      }
+    });
+  }
+  
+  return style;
+});
 
 watch(fontInput, (newFont) => {
   const font = googleFonts.find(f => f.name === newFont);
@@ -51,6 +68,8 @@ watch(() => props.globalFontWeight, (newWeight) => {
 });
 
 const localBoxes = ref([]);
+const editLabelIndex = ref(null);
+const editLabelValue = ref('');
 
 watch(() => props.boxes, (newBoxes) => {
   localBoxes.value = [...newBoxes];
@@ -187,10 +206,46 @@ const removeBox = (index) => {
   emit('update-boxes', [...localBoxes.value]);
 };
 
+const originalLabelValue = ref('');
+
+const startEditLabel = (index) => {
+  editLabelIndex.value = index;
+  const currentLabel = localBoxes.value[index].label || `Box ${index + 1}`;
+  editLabelValue.value = currentLabel;
+  originalLabelValue.value = currentLabel;
+};
+
+const updateLabelLive = (index) => {
+  localBoxes.value[index].label = editLabelValue.value;
+  emit('update-boxes', [...localBoxes.value]);
+};
+
+const handleBlur = (index) => {
+  if (!editLabelValue.value.trim()) {
+    localBoxes.value[index].label = ''; // Set to empty so getter/computed can show "Box N"
+    // Or explicitly set "Box N" if preferred. The description says "wieder eingesetzt werden".
+    // Actually, localBoxes[index].label = '' will trigger the fallback in template.
+    // But let's be explicit if the user wants it to be "Box N" again.
+    localBoxes.value[index].label = `Box ${index + 1}`;
+    emit('update-boxes', [...localBoxes.value]);
+  }
+  editLabelIndex.value = null;
+};
+
+const cancelEditLabel = (index) => {
+  localBoxes.value[index].label = originalLabelValue.value;
+  editLabelValue.value = originalLabelValue.value;
+  editLabelIndex.value = null;
+  emit('update-boxes', [...localBoxes.value]);
+};
+
 watch([fontInput, fontWeightInput, cssInput], () => {
   emit('update-config', { font: fontInput.value, fontWeight: fontWeightInput.value, css: cssInput.value });
 });
 
+const vFocus = {
+  mounted: (el) => el.focus()
+};
 </script>
 
 <template>
@@ -252,10 +307,23 @@ watch([fontInput, fontWeightInput, cssInput], () => {
       
       <section v-if="localBoxes.length > 0">
         <h3>Boxen ({{ localBoxes.length }})</h3>
-        <ul>
-          <li v-for="(_, index) in localBoxes" :key="index">
-            Box {{ index + 1 }}
-            <button @click="removeBox(index)" class="btn-small">Löschen</button>
+        <ul class="box-list">
+          <li v-for="(box, index) in localBoxes" :key="index" class="box-item">
+            <div v-if="editLabelIndex === index" class="edit-label-container">
+              <input 
+                v-model="editLabelValue" 
+                @input="updateLabelLive(index)"
+                @keyup.enter="editLabelIndex = null" 
+                @keyup.esc="cancelEditLabel(index)"
+                @blur="handleBlur(index)"
+                v-focus
+                class="edit-label-input"
+              />
+            </div>
+            <div v-else class="box-label-display" @click="startEditLabel(index)">
+              <span class="box-name">{{ box.label || `Box ${index + 1}` }}</span>
+              <button @click.stop="removeBox(index)" class="btn-small">Löschen</button>
+            </div>
           </li>
         </ul>
       </section>
@@ -293,14 +361,23 @@ watch([fontInput, fontWeightInput, cssInput], () => {
           :key="index"
           class="box-overlay"
           :class="{ selected: selectedBoxIndex === index }"
-          :style="{
-            left: box.x + 'px',
-            top: box.y + 'px',
-            width: box.width + 'px',
-            height: box.height + 'px'
-          }"
+          :style="[
+            {
+              left: box.x + 'px',
+              top: box.y + 'px',
+              width: box.width + 'px',
+              height: box.height + 'px'
+            },
+            previewStyle
+          ]"
         >
-          <span class="box-label">{{ index + 1 }}</span>
+          <span class="box-label">{{ box.label || (index + 1) }}</span>
+          
+          <div v-if="box.text" class="box-content-preview">
+            <div v-for="(line, i) in box.text.split('\n')" :key="i">
+              {{ line }}
+            </div>
+          </div>
           
           <!-- Delete Icon (bottom left) -->
           <button 
@@ -342,6 +419,41 @@ h3 {
   margin-top: 0;
   margin-bottom: 10px;
   font-size: 1rem;
+}
+
+.box-list {
+  list-style: none;
+  padding: 0;
+}
+
+.box-item {
+  margin-bottom: 8px;
+  padding: 4px;
+  border-radius: 4px;
+  background: #f9f9f9;
+}
+
+.box-label-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.box-name {
+  flex-grow: 1;
+  font-size: 0.9rem;
+}
+
+.edit-label-container {
+  display: flex;
+  gap: 5px;
+}
+
+.edit-label-input {
+  flex-grow: 1;
+  padding: 2px 4px;
+  font-size: 0.9rem;
 }
 
 label {
@@ -468,6 +580,17 @@ textarea {
   padding: 0 5px;
   font-size: 0.8rem;
   border-radius: 2px;
+  z-index: 2;
+}
+
+.box-content-preview {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  pointer-events: none;
+  font-size: inherit; /* Nutze die Schriftgröße von .box-overlay (previewStyle) */
 }
 
 .delete-btn {

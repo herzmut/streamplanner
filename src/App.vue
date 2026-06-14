@@ -18,7 +18,8 @@ const configSchema = {
           x: { type: 'number' },
           y: { type: 'number' },
           width: { type: 'number' },
-          height: { type: 'number' }
+          height: { type: 'number' },
+          label: { type: 'string' }
         },
         required: ['x', 'y', 'width', 'height']
       }
