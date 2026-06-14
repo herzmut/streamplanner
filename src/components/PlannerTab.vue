@@ -15,7 +15,23 @@ const updateText = (index, value) => {
 };
 
 const combinedStyle = computed(() => {
-  return `font-family: '${props.globalFont}'; font-weight: ${props.globalFontWeight}; ${props.globalCss}`;
+  let style = {
+    fontFamily: `'${props.globalFont}'`,
+    fontWeight: props.globalFontWeight
+  };
+
+  if (props.globalCss) {
+    const rules = props.globalCss.split(';');
+    rules.forEach(rule => {
+      const [prop, value] = rule.split(':').map(s => s.trim());
+      if (prop && value) {
+        const camelProp = prop.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+        style[camelProp] = value;
+      }
+    });
+  }
+
+  return style;
 });
 
 const downloadImage = (format) => {
@@ -65,7 +81,13 @@ const downloadImage = (format) => {
     
     // Scaling font size for natural resolution
     const scaledFontSize = fontSizeInPx * scaleY;
-    ctx.font = `${props.globalFontWeight} ${scaledFontSize}px '${props.globalFont}'`;
+    
+    // Set font weight from globalFontWeight if not specified in globalCss
+    let fontWeight = props.globalFontWeight || 400;
+    const weightMatch = props.globalCss.match(/font-weight:\s*([^;]+)/);
+    if (weightMatch) fontWeight = weightMatch[1].trim();
+    
+    ctx.font = `${fontWeight} ${scaledFontSize}px '${props.globalFont}'`;
     
     // Parse color from globalCss if present
     let color = 'black';
@@ -143,7 +165,7 @@ const downloadImage = (format) => {
             combinedStyle
           ]"
         >
-          <div class="content-display">
+          <div class="content-display" :style="combinedStyle">
             <div v-for="(line, i) in (localTexts[index] || '').split('\n')" :key="i">
               {{ line }}
             </div>
@@ -254,6 +276,7 @@ const downloadImage = (format) => {
 .content-display {
   width: 100%;
   height: 100%;
+  font-size: 20px; /* Match default from downloadImage for consistent preview */
 }
 
 .no-boxes, .empty-state {

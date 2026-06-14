@@ -22,27 +22,6 @@ const fontWeightInput = ref(props.globalFontWeight || 400);
 
 const selectedFont = computed(() => googleFonts.find(f => f.name === fontInput.value) || googleFonts[0]);
 
-const previewStyle = computed(() => {
-  let style = {
-    fontFamily: `'${fontInput.value}'`,
-    fontWeight: fontWeightInput.value
-  };
-  
-  // Parse global CSS into the style object
-  if (props.globalCss) {
-    const rules = props.globalCss.split(';');
-    rules.forEach(rule => {
-      const [prop, value] = rule.split(':').map(s => s.trim());
-      if (prop && value) {
-        // Simple mapping for common CSS properties to JS style keys
-        const camelProp = prop.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
-        style[camelProp] = value;
-      }
-    });
-  }
-  
-  return style;
-});
 
 const contrastBackground = computed(() => {
   const color = previewStyle.value.color;
@@ -119,6 +98,28 @@ watch(fontInput, (newFont) => {
 });
 
 const cssInput = ref(props.globalCss);
+
+const previewStyle = computed(() => {
+  let style = {
+    fontFamily: `'${fontInput.value}'`,
+    fontWeight: fontWeightInput.value
+  };
+  
+  // Parse global CSS into the style object
+  if (cssInput.value) {
+    const rules = cssInput.value.split(';');
+    rules.forEach(rule => {
+      const [prop, value] = rule.split(':').map(s => s.trim());
+      if (prop && value) {
+        // Simple mapping for common CSS properties to JS style keys
+        const camelProp = prop.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+        style[camelProp] = value;
+      }
+    });
+  }
+  
+  return style;
+});
 
 watch(() => props.globalCss, (newCss) => {
   cssInput.value = newCss;
@@ -432,16 +433,20 @@ const vFocus = {
               top: box.y + 'px',
               width: box.width + 'px',
               height: box.height + 'px'
-            },
-            previewStyle
+            }
           ]"
         >
           <span class="box-label">{{ box.label || (index + 1) }}</span>
           
-          <div v-if="box.text" class="box-content-preview">
-            <div v-for="(line, i) in box.text.split('\n')" :key="i">
-              {{ line }}
-            </div>
+          <div class="box-content-preview" :style="previewStyle">
+            <template v-if="box.text">
+              <div v-for="(line, i) in box.text.split('\n')" :key="i">
+                {{ line }}
+              </div>
+            </template>
+            <template v-else>
+              <div class="placeholder-text">Text</div>
+            </template>
           </div>
           
           <!-- Delete Icon (bottom left) -->
@@ -655,6 +660,7 @@ textarea {
   color: var(--night-owl-bg);
   padding: 0 5px;
   font-size: 0.8rem;
+  font-family: sans-serif;
   font-weight: bold;
   border-radius: 2px;
   z-index: 2;
@@ -667,7 +673,12 @@ textarea {
   white-space: pre-wrap;
   word-break: break-word;
   pointer-events: none;
-  font-size: inherit; /* Nutze die Schriftgröße von .box-overlay (previewStyle) */
+  font-size: 20px; /* Standardgröße für bessere Sichtbarkeit in der Vorschau */
+}
+
+.placeholder-text {
+  opacity: 0.3;
+  font-style: italic;
 }
 
 .delete-btn {
