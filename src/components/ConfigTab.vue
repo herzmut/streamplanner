@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 
-const props = defineProps(['templateImage', 'boxes', 'globalFont', 'globalFontWeight', 'globalCss']);
+const props = defineProps(['templateImage', 'boxes', 'globalFont', 'globalFontWeight', 'globalColor', 'globalCss']);
 const emit = defineEmits(['upload', 'update-boxes', 'update-config', 'export-settings', 'import-settings']);
 
 const googleFonts = [
@@ -19,6 +19,7 @@ const googleFonts = [
 
 const fontInput = ref(props.globalFont);
 const fontWeightInput = ref(props.globalFontWeight || 400);
+const colorInput = ref(props.globalColor || '#000000');
 
 const selectedFont = computed(() => googleFonts.find(f => f.name === fontInput.value) || googleFonts[0]);
 
@@ -102,7 +103,8 @@ const cssInput = ref(props.globalCss);
 const previewStyle = computed(() => {
   let style = {
     fontFamily: `'${fontInput.value}'`,
-    fontWeight: fontWeightInput.value
+    fontWeight: fontWeightInput.value,
+    color: colorInput.value
   };
   
   // Parse global CSS into the style object
@@ -131,6 +133,10 @@ watch(() => props.globalFont, (newFont) => {
 
 watch(() => props.globalFontWeight, (newWeight) => {
   fontWeightInput.value = newWeight;
+});
+
+watch(() => props.globalColor, (newColor) => {
+  colorInput.value = newColor;
 });
 
 const localBoxes = ref([]);
@@ -305,8 +311,8 @@ const cancelEditLabel = (index) => {
   emit('update-boxes', [...localBoxes.value]);
 };
 
-watch([fontInput, fontWeightInput, cssInput], () => {
-  emit('update-config', { font: fontInput.value, fontWeight: fontWeightInput.value, css: cssInput.value });
+watch([fontInput, fontWeightInput, colorInput, cssInput], () => {
+  emit('update-config', { font: fontInput.value, fontWeight: fontWeightInput.value, color: colorInput.value, css: cssInput.value });
 });
 
 const vFocus = {
@@ -358,6 +364,11 @@ const vFocus = {
             :max="selectedFont.weights[selectedFont.weights.length - 1]" 
             step="100"
           />
+        </div>
+
+        <div class="color-selector">
+          <label>Textfarbe</label>
+          <input type="color" v-model="colorInput" />
         </div>
       </section>
 
@@ -712,6 +723,18 @@ textarea {
   cursor: nwse-resize;
   border-radius: 50%;
   border: 2px solid var(--night-owl-bg);
+}
+
+.color-selector {
+  margin-top: 15px;
+}
+
+.color-selector input {
+  width: 100%;
+  height: 40px;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
 }
 
 .selected-font-preview {

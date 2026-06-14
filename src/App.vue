@@ -28,6 +28,7 @@ const configSchema = {
     },
     globalFont: { type: 'string' },
     globalFontWeight: { type: 'number' },
+    globalColor: { type: 'string' },
     globalCss: { type: 'string' },
     version: { type: 'number' }
   },
@@ -43,6 +44,7 @@ const templateImage = ref(null);
 const boxes = ref([]);
 const globalFont = ref('Roboto');
 const globalFontWeight = ref(400);
+const globalColor = ref('#000000');
 const globalCss = ref('');
 
 const showPrivacyModal = ref(false);
@@ -60,6 +62,7 @@ onMounted(() => {
       if (config.boxes) boxes.value = config.boxes;
       if (config.globalFont) globalFont.value = config.globalFont;
       if (config.globalFontWeight) globalFontWeight.value = config.globalFontWeight;
+      if (config.globalColor) globalColor.value = config.globalColor;
       if (config.globalCss) globalCss.value = config.globalCss;
     } catch (e) {
       console.error('Failed to load settings from localStorage', e);
@@ -69,13 +72,14 @@ onMounted(() => {
 
 // Watch for changes and save to localStorage
 watch(
-  [templateImage, boxes, globalFont, globalFontWeight, globalCss],
+  [templateImage, boxes, globalFont, globalFontWeight, globalColor, globalCss],
   () => {
     const config = {
       templateImage: templateImage.value,
       boxes: boxes.value,
       globalFont: globalFont.value,
       globalFontWeight: globalFontWeight.value,
+      globalColor: globalColor.value,
       globalCss: globalCss.value,
     };
     try {
@@ -102,6 +106,7 @@ const updateBoxes = (newBoxes) => {
 const updateConfig = (config) => {
   globalFont.value = config.font;
   globalFontWeight.value = config.fontWeight;
+  globalColor.value = config.color || '#000000';
   globalCss.value = config.css;
 };
 
@@ -111,6 +116,7 @@ const exportToClipboard = async () => {
     boxes: boxes.value,
     globalFont: globalFont.value,
     globalFontWeight: globalFontWeight.value,
+    globalColor: globalColor.value,
     globalCss: globalCss.value,
     version: 1
   };
@@ -142,6 +148,7 @@ const importFromClipboard = async () => {
     if (config.boxes !== undefined) boxes.value = config.boxes;
     if (config.globalFont !== undefined) globalFont.value = config.globalFont;
     if (config.globalFontWeight !== undefined) globalFontWeight.value = config.globalFontWeight;
+    if (config.globalColor !== undefined) globalColor.value = config.globalColor;
     if (config.globalCss !== undefined) globalCss.value = config.globalCss;
     
     alert('Einstellungen erfolgreich importiert.');
@@ -199,6 +206,7 @@ const importFromClipboard = async () => {
         :boxes="boxes"
         :global-font="globalFont"
         :global-font-weight="globalFontWeight"
+        :global-color="globalColor"
         :global-css="globalCss"
       />
       <ConfigTab 
@@ -207,6 +215,7 @@ const importFromClipboard = async () => {
         :boxes="boxes"
         :global-font="globalFont"
         :global-font-weight="globalFontWeight"
+        :global-color="globalColor"
         :global-css="globalCss"
         @upload="handleImageUpload"
         @update-boxes="updateBoxes"

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 
-const props = defineProps(['templateImage', 'boxes', 'globalFont', 'globalFontWeight', 'globalCss']);
+const props = defineProps(['templateImage', 'boxes', 'globalFont', 'globalFontWeight', 'globalColor', 'globalCss']);
 
 const localTexts = ref([]);
 
@@ -17,7 +17,8 @@ const updateText = (index, value) => {
 const combinedStyle = computed(() => {
   let style = {
     fontFamily: `'${props.globalFont}'`,
-    fontWeight: props.globalFontWeight
+    fontWeight: props.globalFontWeight,
+    color: props.globalColor
   };
 
   if (props.globalCss) {
@@ -89,8 +90,8 @@ const downloadImage = (format) => {
     
     ctx.font = `${fontWeight} ${scaledFontSize}px '${props.globalFont}'`;
     
-    // Parse color from globalCss if present
-    let color = 'black';
+    // Setze die Schriftfarbe: Priorität hat CSS, dann globalColor, dann Schwarz
+    let color = props.globalColor || '#000000';
     const colorMatch = props.globalCss.match(/color:\s*([^;]+)/);
     if (colorMatch) color = colorMatch[1].trim();
     ctx.fillStyle = color;
