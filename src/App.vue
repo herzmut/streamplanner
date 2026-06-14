@@ -1,7 +1,37 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue';
+import AJV from 'ajv';
 import ConfigTab from './components/ConfigTab.vue';
 import PlannerTab from './components/PlannerTab.vue';
+
+const ajv = new AJV();
+
+const configSchema = {
+  type: 'object',
+  properties: {
+    templateImage: { type: ['string', 'null'] },
+    boxes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          x: { type: 'number' },
+          y: { type: 'number' },
+          width: { type: 'number' },
+          height: { type: 'number' }
+        },
+        required: ['x', 'y', 'width', 'height']
+      }
+    },
+    globalFont: { type: 'string' },
+    globalFontWeight: { type: 'number' },
+    globalCss: { type: 'string' },
+    version: { type: 'number' }
+  },
+  additionalProperties: true
+};
+
+const validate = ajv.compile(configSchema);
 
 const STORAGE_KEY = 'streamplanner_settings';
 
@@ -66,6 +96,52 @@ const updateConfig = (config) => {
   globalFontWeight.value = config.fontWeight;
   globalCss.value = config.css;
 };
+
+const exportToClipboard = async () => {
+  const config = {
+    templateImage: templateImage.value,
+    boxes: boxes.value,
+    globalFont: globalFont.value,
+    globalFontWeight: globalFontWeight.value,
+    globalCss: globalCss.value,
+    version: 1
+  };
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(config));
+    alert('Einstellungen wurden in die Zwischenablage kopiert.');
+  } catch (err) {
+    console.error('Fehler beim Kopieren in die Zwischenablage:', err);
+    alert('Fehler beim Exportieren.');
+  }
+};
+
+const importFromClipboard = async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    const config = JSON.parse(text);
+
+
+    // Validierung mit JSON Schema
+    const valid = validate(config);
+    if (!valid) {
+      const errors = validate.errors.map(err => `${err.instancePath} ${err.message}`).join(', ');
+      console.error('Fehler beim Validieren:', errors);
+      alert('Ungültiges Format');
+    }
+    
+    // Anwenden der Werte
+    if (config.templateImage !== undefined) templateImage.value = config.templateImage;
+    if (config.boxes !== undefined) boxes.value = config.boxes;
+    if (config.globalFont !== undefined) globalFont.value = config.globalFont;
+    if (config.globalFontWeight !== undefined) globalFontWeight.value = config.globalFontWeight;
+    if (config.globalCss !== undefined) globalCss.value = config.globalCss;
+    
+    alert('Einstellungen erfolgreich importiert.');
+  } catch (err) {
+    console.error('Fehler beim Importieren:', err);
+    alert('Fehler beim Importieren: ' + err.message);
+  }
+};
 </script>
 
 <template>
@@ -106,6 +182,8 @@ const updateConfig = (config) => {
         @upload="handleImageUpload"
         @update-boxes="updateBoxes"
         @update-config="updateConfig"
+        @export-settings="exportToClipboard"
+        @import-settings="importFromClipboard"
       />
     </main>
   </div>

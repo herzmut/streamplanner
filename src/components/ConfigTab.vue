@@ -1,8 +1,8 @@
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 
 const props = defineProps(['templateImage', 'boxes', 'globalFont', 'globalFontWeight', 'globalCss']);
-const emit = defineEmits(['upload', 'update-boxes', 'update-config']);
+const emit = defineEmits(['upload', 'update-boxes', 'update-config', 'export-settings', 'import-settings']);
 
 const googleFonts = [
   { name: 'Roboto', weights: [100, 300, 400, 500, 700, 900] },
@@ -198,8 +198,14 @@ watch([fontInput, fontWeightInput, cssInput], () => {
     <div class="sidebar">
       <section>
         <h3>Allgemein</h3>
-        <label>Vorlage hochladen:</label>
-        <input type="file" @change="handleFileUpload" accept="image/*" />
+        <div class="input-group">
+          <label>Vorlage hochladen:</label>
+          <input type="file" @change="handleFileUpload" accept="image/*" />
+        </div>
+        <div class="transfer-actions">
+          <button @click="emit('export-settings')" class="action-btn">Export</button>
+          <button @click="emit('import-settings')" class="action-btn">Import</button>
+        </div>
       </section>
 
       <section>
@@ -247,9 +253,9 @@ watch([fontInput, fontWeightInput, cssInput], () => {
       <section v-if="localBoxes.length > 0">
         <h3>Boxen ({{ localBoxes.length }})</h3>
         <ul>
-          <li v-for="(box, index) in localBoxes" :key="index">
-            Box {{ index + 1 }} 
-            <button @click="removeBox(index)" class="btn-small">Löschen</button>
+          <li v-for="index in localBoxes" :key="index - 1">
+            Box {{ index }}
+            <button @click="removeBox(index - 1)" class="btn-small">Löschen</button>
           </li>
         </ul>
       </section>
@@ -264,7 +270,7 @@ watch([fontInput, fontWeightInput, cssInput], () => {
         @mousemove="onMouseMove"
         @mouseup="onMouseUp"
       >
-        <img v-if="templateImage" :src="templateImage" class="template-img" draggable="false" />
+        <img v-if="templateImage" :src="templateImage" class="template-img" draggable="false" alt="Vorlage" />
         <div v-else class="empty-state">
           Bitte eine Vorlage hochladen, um Boxen zu definieren.
         </div>
@@ -343,6 +349,31 @@ label {
   margin-bottom: 5px;
 }
 
+.input-group {
+  margin-bottom: 10px;
+}
+
+.transfer-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px;
+  background-color: var(--primary-color, #42b983);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.action-btn:hover {
+  filter: brightness(0.9);
+}
+
 input[type="file"], select, textarea {
   width: 100%;
   padding: 8px;
@@ -400,10 +431,8 @@ textarea {
   background: white;
 }
 
-/* Ameisenlinie / Marquee effect */
 .drawing-box, .box-overlay {
   position: absolute;
-  border: 1px dashed #000;
   box-sizing: border-box;
   background-image: linear-gradient(to right, #000 50%, transparent 50%), 
                     linear-gradient(to right, #000 50%, transparent 50%), 
@@ -413,7 +442,6 @@ textarea {
   background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
   background-size: 10px 1px, 10px 1px, 1px 10px, 1px 10px;
   animation: marquee 0.4s infinite linear;
-  border: none;
 }
 
 @keyframes marquee {
