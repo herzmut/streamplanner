@@ -191,22 +191,9 @@ const importFromClipboard = async () => {
 </template>
 
 <style>
-:root {
-  --primary-color: #42b983;
-  --bg-color: #f8f9fa;
-  --text-color: #2c3e50;
-}
-
-body {
-  margin: 0;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-
 .app-container {
-  width: 70vw;
-  margin: 0 auto;
+  width: 90vw;
+  margin: 0;
   padding: 20px;
   min-height: 100vh;
   box-sizing: border-box;
@@ -218,7 +205,7 @@ body {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
-  border-bottom: 2px solid #ddd;
+  border-bottom: 2px solid var(--color-border);
   padding-bottom: 10px;
 }
 
@@ -229,22 +216,31 @@ body {
   cursor: pointer;
   font-size: 1.1rem;
   font-weight: bold;
-  color: #666;
+  color: var(--color-text);
   border-radius: 4px;
+  opacity: 0.7;
+  transition: all 0.2s;
+}
+
+.tabs button:hover {
+  opacity: 1;
+  background-color: var(--color-background-soft);
 }
 
 .tabs button.active {
   color: var(--primary-color);
-  background-color: rgba(66, 185, 131, 0.1);
+  background-color: rgba(127, 219, 202, 0.1);
+  opacity: 1;
 }
 
 .tab-content {
-  background: white;
+  background: var(--color-background-soft);
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+  color: var(--color-text);
 }
 </style>

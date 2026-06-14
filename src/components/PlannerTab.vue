@@ -125,7 +125,7 @@ const downloadImage = (format) => {
       </div>
     </div>
 
-    <div class="main-preview" :class="{ 'centered-content': templateImage }">
+    <div class="main-preview">
       <div v-if="templateImage" class="preview-container">
         <img :src="templateImage" class="template-preview-img" alt="Vorschau" />
         
@@ -178,14 +178,23 @@ const downloadImage = (format) => {
   font-weight: bold;
   margin-bottom: 5px;
   font-size: 0.9rem;
+  color: var(--color-heading);
 }
 
 .text-input-group textarea {
   width: 100%;
   padding: 8px;
-  border: 1px solid #ccc;
+  background-color: var(--color-background-mute);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.text-input-group textarea:focus {
+  border-color: var(--primary-color);
+  outline: none;
 }
 
 .download-actions {
@@ -197,21 +206,23 @@ const downloadImage = (format) => {
 
 .download-actions button {
   padding: 10px;
-  background-color: #42b983;
-  color: white;
-  border: none;
+  background-color: var(--night-owl-button-bg);
+  color: var(--night-owl-text);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
+  transition: all 0.2s;
 }
 
 .download-actions button:hover {
-  background-color: #3aa876;
+  background-color: var(--night-owl-button-hover);
+  border-color: var(--primary-color);
 }
 
 .main-preview {
   flex-grow: 1;
-  background: #eee;
+  background: var(--color-background);
   padding: 20px;
   border-radius: 4px;
   overflow: auto;
@@ -219,15 +230,12 @@ const downloadImage = (format) => {
   flex-direction: column;
 }
 
-.main-preview.centered-content {
-  align-items: center;
-}
 
 .preview-container {
   position: relative;
   display: inline-block;
-  background: white;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  background: #222;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 .template-preview-img {
@@ -249,18 +257,19 @@ const downloadImage = (format) => {
 }
 
 .no-boxes, .empty-state {
-  color: #666;
+  color: var(--color-text);
+  opacity: 0.6;
   font-style: italic;
   padding: 20px;
   text-align: center;
 }
 
 .empty-state {
-  background: white;
+  background: var(--color-background-mute);
   flex-grow: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px dashed #ccc;
+  border: 2px dashed var(--color-border);
 }
 </style>

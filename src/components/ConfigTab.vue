@@ -44,6 +44,71 @@ const previewStyle = computed(() => {
   return style;
 });
 
+const contrastBackground = computed(() => {
+  const color = previewStyle.value.color;
+  if (!color) return 'var(--color-background-mute)';
+
+  // Hilfsfunktion zum Parsen von Farben
+  const getLuminance = (col) => {
+    let r, g, b;
+    
+    // Hex-Format (#fff oder #ffffff)
+    if (col.startsWith('#')) {
+      const hex = col.slice(1);
+      if (hex.length === 3) {
+        r = parseInt(hex[0] + hex[0], 16);
+        g = parseInt(hex[1] + hex[1], 16);
+        b = parseInt(hex[2] + hex[2], 16);
+      } else {
+        r = parseInt(hex.slice(0, 2), 16);
+        g = parseInt(hex.slice(2, 4), 16);
+        b = parseInt(hex.slice(4, 6), 16);
+      }
+    } 
+    // RGB/RGBA-Format
+    else if (col.startsWith('rgb')) {
+      const match = col.match(/\d+/g);
+      if (match) {
+        [r, g, b] = match.map(Number);
+      }
+    }
+    // Bekannte Farbnamen (sehr rudimentär)
+    else {
+      const colors = {
+        'white': [255, 255, 255],
+        'black': [0, 0, 0],
+        'red': [255, 0, 0],
+        'green': [0, 255, 0],
+        'blue': [0, 0, 255],
+        'yellow': [255, 255, 0],
+        'cyan': [0, 255, 255],
+        'magenta': [255, 0, 255],
+        'silver': [192, 192, 192],
+        'gray': [128, 128, 128],
+        'grey': [128, 128, 128],
+        'maroon': [128, 0, 0],
+        'olive': [128, 128, 0],
+        'lime': [0, 255, 0],
+        'teal': [0, 128, 128],
+        'navy': [0, 0, 128],
+        'purple': [128, 0, 128]
+      };
+      const found = colors[col.toLowerCase()];
+      if (found) [r, g, b] = found;
+    }
+
+    if (r !== undefined) {
+      // Relative Luminanz nach W3C Standard
+      return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    }
+    return 0.5; // Default falls nicht erkannt
+  };
+
+  const luminance = getLuminance(color);
+  // Wenn Luminanz > 0.6 (hell), dann dunkler Hintergrund, sonst heller Hintergrund
+  return luminance > 0.6 ? '#111' : '#eee';
+});
+
 watch(fontInput, (newFont) => {
   const font = googleFonts.find(f => f.name === newFont);
   if (font && !font.weights.includes(fontWeightInput.value)) {
@@ -265,7 +330,7 @@ const vFocus = {
 
       <section>
         <h3>Schriftart</h3>
-        <div class="selected-font-preview" :style="previewStyle">
+        <div class="selected-font-preview" :style="[previewStyle, { backgroundColor: contrastBackground }]">
           AaBbQqZz
         </div>
         
@@ -329,7 +394,7 @@ const vFocus = {
       </section>
     </div>
 
-    <div class="main-preview" :class="{ 'centered-content': templateImage }">
+    <div class="main-preview">
       <div 
         ref="canvasContainer" 
         class="canvas-container"
@@ -412,13 +477,14 @@ const vFocus = {
 section {
   margin-bottom: 20px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
 }
 
 h3 {
   margin-top: 0;
   margin-bottom: 10px;
   font-size: 1rem;
+  color: var(--color-heading);
 }
 
 .box-list {
@@ -430,7 +496,8 @@ h3 {
   margin-bottom: 8px;
   padding: 4px;
   border-radius: 4px;
-  background: #f9f9f9;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
 }
 
 .box-label-display {
@@ -443,6 +510,7 @@ h3 {
 .box-name {
   flex-grow: 1;
   font-size: 0.9rem;
+  color: var(--color-text);
 }
 
 .edit-label-container {
@@ -454,11 +522,17 @@ h3 {
   flex-grow: 1;
   padding: 2px 4px;
   font-size: 0.9rem;
+  background: var(--color-background-mute);
+  color: var(--color-text);
+  border: 1px solid var(--primary-color);
+  border-radius: 2px;
 }
 
 label {
   display: block;
   margin-bottom: 5px;
+  color: var(--color-text);
+  font-size: 0.9rem;
 }
 
 .input-group {
@@ -474,22 +548,26 @@ label {
 .action-btn {
   flex: 1;
   padding: 8px;
-  background-color: var(--primary-color, #42b983);
-  color: white;
-  border: none;
+  background-color: var(--night-owl-button-bg);
+  color: var(--night-owl-text);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
+  transition: all 0.2s;
 }
 
 .action-btn:hover {
-  filter: brightness(0.9);
+  background-color: var(--night-owl-button-hover);
+  border-color: var(--primary-color);
 }
 
 input[type="file"], select, textarea {
   width: 100%;
   padding: 8px;
-  border: 1px solid #ccc;
+  background-color: var(--color-background-mute);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   box-sizing: border-box;
 }
@@ -501,14 +579,15 @@ textarea {
 
 .hint {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--night-owl-blue);
   margin-top: 5px;
+  opacity: 0.8;
 }
 
 .main-preview {
   flex-grow: 1;
   overflow: auto;
-  background: #eee;
+  background: var(--color-background);
   padding: 20px;
   border-radius: 4px;
   min-height: 600px;
@@ -516,15 +595,12 @@ textarea {
   flex-direction: column;
 }
 
-.main-preview.centered-content {
-  align-items: center;
-}
 
 .canvas-container {
   position: relative;
   display: inline-block;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
-  background: white;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  background: #222;
 }
 
 .template-img {
@@ -538,18 +614,19 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #999;
-  border: 2px dashed #ccc;
-  background: white;
+  color: var(--color-text);
+  opacity: 0.5;
+  border: 2px dashed var(--color-border);
+  background: var(--color-background-mute);
 }
 
 .drawing-box, .box-overlay {
   position: absolute;
   box-sizing: border-box;
-  background-image: linear-gradient(to right, #000 50%, transparent 50%), 
-                    linear-gradient(to right, #000 50%, transparent 50%), 
-                    linear-gradient(to bottom, #000 50%, transparent 50%), 
-                    linear-gradient(to bottom, #000 50%, transparent 50%);
+  background-image: linear-gradient(to right, var(--primary-color) 50%, transparent 50%), 
+                    linear-gradient(to right, var(--primary-color) 50%, transparent 50%), 
+                    linear-gradient(to bottom, var(--primary-color) 50%, transparent 50%), 
+                    linear-gradient(to bottom, var(--primary-color) 50%, transparent 50%);
   background-position: left top, left bottom, left top, right top;
   background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
   background-size: 10px 1px, 10px 1px, 1px 10px, 1px 10px;
@@ -562,12 +639,11 @@ textarea {
 }
 
 .box-overlay {
-  background: rgba(66, 185, 131, 0.1);
+  background: rgba(127, 219, 202, 0.1);
 }
 
 .box-overlay.selected {
-  background: rgba(66, 185, 131, 0.3);
-  border-color: #42b983;
+  background: rgba(127, 219, 202, 0.3);
   z-index: 10;
 }
 
@@ -575,10 +651,11 @@ textarea {
   position: absolute;
   top: -20px;
   left: 0;
-  background: #42b983;
-  color: white;
+  background: var(--primary-color);
+  color: var(--night-owl-bg);
   padding: 0 5px;
   font-size: 0.8rem;
+  font-weight: bold;
   border-radius: 2px;
   z-index: 2;
 }
@@ -597,8 +674,8 @@ textarea {
   position: absolute;
   bottom: -15px;
   left: -15px;
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--night-owl-red);
+  border: none;
   border-radius: 50%;
   width: 30px;
   height: 30px;
@@ -606,32 +683,35 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  font-size: 1rem;
 }
 
 .delete-btn:hover {
-  background: #fde8e8;
+  filter: brightness(1.2);
 }
 
 .resize-handle {
   position: absolute;
   bottom: -5px;
   right: -5px;
-  width: 10px;
-  height: 10px;
-  background: #42b983;
+  width: 12px;
+  height: 12px;
+  background: var(--primary-color);
   cursor: nwse-resize;
   border-radius: 50%;
+  border: 2px solid var(--night-owl-bg);
 }
 
 .selected-font-preview {
   padding: 15px;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   margin-bottom: 15px;
   text-align: center;
   font-size: 2rem;
-  background: #f9f9f9;
+  background: var(--color-background-mute);
+  color: var(--color-text);
 }
 
 .font-selector {
@@ -640,10 +720,11 @@ textarea {
   gap: 10px;
   max-height: 300px;
   overflow-y: auto;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 15px;
+  background: var(--color-background-mute);
 }
 
 .font-option {
@@ -655,22 +736,23 @@ textarea {
 }
 
 .font-option:hover {
-  background: #f0f0f0;
+  background: var(--night-owl-button-bg);
 }
 
 .font-option.active {
-  border-color: #42b983;
-  background: rgba(66, 185, 131, 0.1);
+  border-color: var(--primary-color);
+  background: rgba(127, 219, 202, 0.1);
 }
 
 .font-name {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--night-owl-blue);
   margin-bottom: 2px;
 }
 
 .font-preview {
   font-size: 1.2rem;
+  color: var(--color-text);
 }
 
 .weight-selector {
@@ -679,12 +761,23 @@ textarea {
 
 .weight-selector input {
   width: 100%;
+  accent-color: var(--primary-color);
 }
 
 .btn-small {
-  padding: 2px 5px;
+  padding: 2px 8px;
   font-size: 0.7rem;
   margin-left: 5px;
+  background: var(--night-owl-button-bg);
+  color: var(--night-owl-text);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.btn-small:hover {
+  background: var(--night-owl-red);
+  color: white;
 }
 
 ul {
