@@ -253,9 +253,9 @@ watch([fontInput, fontWeightInput, cssInput], () => {
       <section v-if="localBoxes.length > 0">
         <h3>Boxen ({{ localBoxes.length }})</h3>
         <ul>
-          <li v-for="index in localBoxes" :key="index - 1">
-            Box {{ index }}
-            <button @click="removeBox(index - 1)" class="btn-small">Löschen</button>
+          <li v-for="(_, index) in localBoxes" :key="index">
+            Box {{ index + 1 }}
+            <button @click="removeBox(index)" class="btn-small">Löschen</button>
           </li>
         </ul>
       </section>
