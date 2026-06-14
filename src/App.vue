@@ -1,6 +1,8 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import AJV from 'ajv';
+import { marked } from 'marked';
+import privacyRaw from './assets/privacy.md?raw';
 import ConfigTab from './components/ConfigTab.vue';
 import PlannerTab from './components/PlannerTab.vue';
 
@@ -42,6 +44,11 @@ const boxes = ref([]);
 const globalFont = ref('Roboto');
 const globalFontWeight = ref(400);
 const globalCss = ref('');
+
+const showPrivacyModal = ref(false);
+const privacyMarkdown = ref(privacyRaw);
+
+const renderedPrivacy = computed(() => marked(privacyMarkdown.value));
 
 // Load settings from localStorage
 onMounted(() => {
@@ -148,19 +155,40 @@ const importFromClipboard = async () => {
 <template>
   <div class="app-container">
     <nav class="tabs">
-      <button 
-        :class="{ active: activeTab === 'planner' }" 
-        @click="activeTab = 'planner'"
-      >
-        Planer
-      </button>
-      <button 
-        :class="{ active: activeTab === 'config' }" 
-        @click="activeTab = 'config'"
-      >
-        Konfiguration
-      </button>
+      <div class="main-tabs">
+        <button 
+          :class="{ active: activeTab === 'planner' }" 
+          @click="activeTab = 'planner'"
+        >
+          Planer
+        </button>
+        <button 
+          :class="{ active: activeTab === 'config' }" 
+          @click="activeTab = 'config'"
+        >
+          Konfiguration
+        </button>
+      </div>
+      <div class="meta-links">
+        <button class="privacy-link" @click="showPrivacyModal = true">
+          Datenschutz
+        </button>
+      </div>
     </nav>
+
+    <!-- Modal für Datenschutz -->
+    <div v-if="showPrivacyModal" class="modal-overlay" @click.self="showPrivacyModal = false">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Datenschutz</h2>
+          <button class="close-btn" @click="showPrivacyModal = false">&times;</button>
+        </div>
+        <div class="modal-body markdown-body" v-html="renderedPrivacy"></div>
+        <div class="modal-footer">
+          <button class="action-btn" @click="showPrivacyModal = false">Schließen</button>
+        </div>
+      </div>
+    </div>
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&family=Open+Sans:wght@300;400;500;600;700;800&family=Lato:wght@100;300;400;700;900&family=Montserrat:wght@100;200;300;400;500;600;700;800;900&family=Source+Sans+Pro:wght@200;300;400;600;700;900&family=Raleway:wght@100;200;300;400;500;600;700;800;900&family=Oswald:wght@200;300;400;500;600;700&family=Merriweather:wght@300;400;700;900&family=Playfair+Display:wght@400;500;600;700;800;900&family=Noto+Sans:wght@100;200;300;400;500;600;700;800;900&display=swap">
 
@@ -203,10 +231,125 @@ const importFromClipboard = async () => {
 
 .tabs {
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
   border-bottom: 2px solid var(--color-border);
   padding-bottom: 10px;
+}
+
+.main-tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.privacy-link {
+  font-size: 0.9rem !important;
+  opacity: 0.5 !important;
+  font-weight: normal !important;
+}
+
+.privacy-link:hover {
+  opacity: 1 !important;
+  color: var(--primary-color) !important;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: var(--color-background-soft);
+  width: 800px;
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--color-border);
+}
+
+.modal-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--primary-color);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-size: 2rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex-grow: 1;
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+.modal-footer {
+  padding: 15px 20px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  padding: 8px 20px;
+  background-color: var(--night-owl-button-bg);
+  color: var(--night-owl-text);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background-color: var(--night-owl-button-hover);
+  border-color: var(--primary-color);
+}
+
+/* Markdown Styling */
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  color: var(--color-heading);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-body p {
+  margin-bottom: 1em;
+}
+
+.markdown-body ul {
+  margin-bottom: 1em;
+  padding-left: 1.5em;
 }
 
 .tabs button {
